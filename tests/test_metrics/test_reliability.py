@@ -33,6 +33,21 @@ class TestInfitStatistics:
         infit = infit_statistics(predicted, observed)
         assert (infit >= 0).all()
 
+    def test_missing_response_ignored_with_inferred_or_explicit_mask(self):
+        predicted = torch.tensor([[0.8, 0.2], [0.6, 0.3]])
+        observed = torch.tensor([[1.0, float("nan")], [0.0, 1.0]])
+        expected = torch.tensor([1.0, 7.0 / 3.0])
+        for mask in (None, ~torch.isnan(observed)):
+            actual = infit_statistics(predicted, observed, mask=mask)
+            torch.testing.assert_close(actual, expected, atol=1e-6, rtol=1e-6)
+
+    def test_explicit_mask_excludes_finite_response(self):
+        predicted = torch.tensor([[0.8], [0.6]])
+        observed = torch.tensor([[1.0], [0.0]])
+        mask = torch.tensor([[True], [False]])
+        actual = infit_statistics(predicted, observed, mask=mask)
+        torch.testing.assert_close(actual, torch.tensor([0.25]))
+
 
 class TestOutfitStatistics:
     def test_output_shape(self):
@@ -46,6 +61,21 @@ class TestOutfitStatistics:
         observed = torch.bernoulli(predicted)
         outfit = outfit_statistics(predicted, observed)
         assert (outfit >= 0).all()
+
+    def test_missing_response_ignored_with_inferred_or_explicit_mask(self):
+        predicted = torch.tensor([[0.8, 0.2], [0.6, 0.3]])
+        observed = torch.tensor([[1.0, float("nan")], [0.0, 1.0]])
+        expected = torch.tensor([0.875, 7.0 / 3.0])
+        for mask in (None, ~torch.isnan(observed)):
+            actual = outfit_statistics(predicted, observed, mask=mask)
+            torch.testing.assert_close(actual, expected, atol=1e-6, rtol=1e-6)
+
+    def test_explicit_mask_excludes_finite_response(self):
+        predicted = torch.tensor([[0.8], [0.6]])
+        observed = torch.tensor([[1.0], [0.0]])
+        mask = torch.tensor([[True], [False]])
+        actual = outfit_statistics(predicted, observed, mask=mask)
+        torch.testing.assert_close(actual, torch.tensor([0.25]))
 
 
 class TestItemTotalCorrelation:
