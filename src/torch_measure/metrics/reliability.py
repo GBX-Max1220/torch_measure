@@ -39,8 +39,8 @@ def infit_statistics(predicted: torch.Tensor, observed: torch.Tensor, mask: torc
     residual_sq = (observed - p) ** 2
 
     # Weighted mean square: sum(residual^2) / sum(variance) per item
-    numerator = (residual_sq * mask.float()).sum(dim=0)
-    denominator = (variance * mask.float()).sum(dim=0).clamp(min=1e-10)
+    numerator = torch.where(mask, residual_sq, 0.0).sum(dim=0)
+    denominator = torch.where(mask, variance, 0.0).sum(dim=0).clamp(min=1e-10)
 
     return numerator / denominator
 
@@ -74,7 +74,7 @@ def outfit_statistics(
     standardized_residual_sq = ((observed - p) ** 2) / variance
 
     # Simple mean of standardized residuals per item
-    numerator = (standardized_residual_sq * mask.float()).sum(dim=0)
+    numerator = torch.where(mask, standardized_residual_sq, 0.0).sum(dim=0)
     count = mask.float().sum(dim=0).clamp(min=1)
 
     return numerator / count
